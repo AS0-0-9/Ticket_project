@@ -1,0 +1,73 @@
+﻿@model IEnumerable<Ticket>
+
+<div class="row">
+    <div class="col-md-2">
+        <form asp-action="Filter" method="post">
+            <div class="mb-3">
+                <label class="form-label">Sprint</label>
+                <select name="filter" class="form-select"
+                        asp-items="@(new SelectList((IEnumerable<int>)ViewBag.Sprints, ViewBag.Filters.Sprint))">
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Status</label>
+                <select name="filter" class="form-select"
+                        asp-items="@(new SelectList(ViewBag.Statuses, "StatusId", "Name", ViewBag.Filters.StatusId))">
+                    <option value="all">All</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a asp-action="Index" asp-route-id="" class="btn btn-primary">Clear</a>
+        </form>
+    </div>
+
+    <div class="col-md-10">
+        <table class="table table-bordered table-striped mt-2">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Sprint</th>
+                    <th>Points</th>
+                    <th>Status</th>
+                    <th class="w-25"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (Ticket t in Model)
+                {
+                    <tr>
+                        <td>@t.Name</td>
+                        <td>@t.Description</td>
+                        <td>@t.SprintNumber</td>
+                        <td>@t.PointValue</td>
+                        <td>@t.Status?.Name</td>
+                        <td>
+                            @if (t.StatusId != "done")
+                            {
+                                <form asp-action="MoveNext" method="post"
+                                      asp-route-id="@ViewBag.Filters.FilterString">
+                                    <input type="hidden" name="ticketId" value="@t.Id" />
+                                    <button type="submit" class="btn btn-primary btn-sm">Move to Next</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end"><strong>Total points shown:</strong></td>
+                    <td colspan="3"><strong>@Model.Sum(t => t.PointValue)</strong></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <form asp-action="DeleteDone" method="post"
+              asp-route-id="@ViewBag.Filters.FilterString">
+            <a asp-action="Add" class="btn btn-primary">Add New Ticket</a>
+            <button type="submit" class="btn btn-primary">Delete Done Tickets</button>
+        </form>
+    </div>
+</div>
