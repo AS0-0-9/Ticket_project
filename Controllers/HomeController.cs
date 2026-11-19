@@ -6,8 +6,12 @@ namespace Ticket_project.Controllers
 {
     public class HomeController : Controller
     {
-        private TicketContext context;
-        public HomeController(TicketContext ctx) => context = ctx;
+        private readonly ITicketRepository _tickets;
+
+        public HomeController(ITicketRepository tickets)
+        {
+            _tickets = tickets;
+        }
 
         private static readonly string[] Workflow = { "todo", "inprogress", "qa", "done" };
 
@@ -15,11 +19,17 @@ namespace Ticket_project.Controllers
         {
             var filters = new Filters(id);
             ViewBag.Filters = filters;
-            ViewBag.Statuses = context.Statuses.ToList();
-            ViewBag.Sprints = context.Tickets
-                .Select(t => t.SprintNumber).Distinct().OrderBy(s => s).ToList();
+            ViewBag.Statuses = _tickets.GetStatuses();
 
-            IQueryable<Ticket> query = context.Tickets.Include(t => t.Status);
+            var allTickets = _tickets.GetAll();
+
+            ViewBag.Sprints = allTickets
+                .Select(t => t.SprintNumber)
+                .Distinct()
+                .OrderBy(s => s)
+                .ToList();
+
+            IEnumerable<Ticket> query = allTickets;
 
             if (filters.HasSprint && int.TryParse(filters.Sprint, out int sprint))
                 query = query.Where(t => t.SprintNumber == sprint);
@@ -34,7 +44,7 @@ namespace Ticket_project.Controllers
         [HttpGet]
         public IActionResult Add()
         {
-            ViewBag.Statuses = context.Statuses.ToList();
+            ViewBag.Statuses = _tickets.GetStatuses();
             return View(new Ticket { StatusId = "todo", SprintNumber = 1, PointValue = 1 });
         }
 
@@ -43,11 +53,10 @@ namespace Ticket_project.Controllers
         {
             if (ModelState.IsValid)
             {
-                context.Tickets.Add(ticket);
-                context.SaveChanges();
+                _tickets.Add(ticket);
                 return RedirectToAction("Index");
             }
-            ViewBag.Statuses = context.Statuses.ToList();
+            ViewBag.Statuses = _tickets.GetStatuses();
             return View(ticket);
         }
 
@@ -61,14 +70,14 @@ namespace Ticket_project.Controllers
         [HttpPost]
         public IActionResult MoveNext([FromRoute] string? id, int ticketId)
         {
-            var ticket = context.Tickets.Find(ticketId);
+            var ticket = _tickets.GetById(ticketId);
             if (ticket != null)
             {
                 int i = Array.IndexOf(Workflow, ticket.StatusId);
                 if (i >= 0 && i < Workflow.Length - 1)
                 {
                     ticket.StatusId = Workflow[i + 1];
-                    context.SaveChanges();
+                    _tickets.Update(ticket);
                 }
             }
             return RedirectToAction("Index", new { id });
@@ -77,9 +86,7 @@ namespace Ticket_project.Controllers
         [HttpPost]
         public IActionResult DeleteDone([FromRoute] string? id)
         {
-            var toDelete = context.Tickets.Where(t => t.StatusId == "done").ToList();
-            context.Tickets.RemoveRange(toDelete);
-            context.SaveChanges();
+            _tickets.DeleteByStatus("done");
             return RedirectToAction("Index", new { id });
         }
     }
