@@ -1,0 +1,7 @@
+﻿@model Ticket
+
+<form asp-controller="Home" asp-action="MoveNext"
+      asp-route-id="@ViewBag.FilterString" method="post">
+    <input type="hidden" name="ticketId" value="@Model.Id" />
+    <submit-button text="Move to Next" variant="primary" small="true"></submit-button>
+</form>

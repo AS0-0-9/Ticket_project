@@ -17,7 +17,7 @@
                     <option value="all">All</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Filter</button>
+            <submit-button text="Filter" variant="primary"></submit-button>
             <a asp-action="Index" asp-route-id="" class="btn btn-primary">Clear</a>
         </form>
     </div>
@@ -44,14 +44,8 @@
                         <td>@t.PointValue</td>
                         <td>@t.Status?.Name</td>
                         <td>
-                            @if (t.StatusId != "done")
-                            {
-                                <form asp-action="MoveNext" method="post"
-                                      asp-route-id="@ViewBag.Filters.FilterString">
-                                    <input type="hidden" name="ticketId" value="@t.Id" />
-                                    <button type="submit" class="btn btn-primary btn-sm">Move to Next</button>
-                                </form>
-                            }
+                            @await Component.InvokeAsync("MoveNextButton",
+                                new { ticket = t, filterString = (string?)ViewBag.Filters.FilterString })
                         </td>
                     </tr>
                 }
@@ -67,7 +61,9 @@
         <form asp-action="DeleteDone" method="post"
               asp-route-id="@ViewBag.Filters.FilterString">
             <a asp-action="Add" class="btn btn-primary">Add New Ticket</a>
-            <button type="submit" class="btn btn-primary">Delete Done Tickets</button>
+            <form asp-action="DeleteDone" method="post" asp-route-id="@ViewBag.Filters.FilterString">
+                <submit-button text="Delete Done Tickets" variant="danger"></submit-button>
+            </form>
         </form>
     </div>
 </div>
